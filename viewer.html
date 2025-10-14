@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ACAST Viewer Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #007BFF;
+      color: white;
+    }
+
+    .actions {
+      margin: 20px 0;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      background: #007BFF;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #logoutBtn {
+      background: #dc3545;
+    }
+
+    #logoutBtn:hover {
+      background: #a71d2a;
+    }
+  </style>
+</head>
+<body>
+  <h1>ACAST Avionics Division</h1>
+
+  <h2>📋 Viewer Dashboard</h2>
+
+  <div class="actions">
+    <div>
+      <select id="excelDomain">
+        <option value="">-- Select Domain --</option>
+        <option value="EMBEDDED">EMBEDDED</option>
+        <option value="FPGA">FPGA</option>
+        <option value="RTOS">RTOS</option>
+        <option value="RF">RF</option>
+        <option value="WIRELESS">WIRELESS</option>
+        <option value="SYSTEM ENGG">SYSTEM ENGG</option>
+        <option value="COMM AND DSP">COMM AND DSP</option>
+        <option value="CORRELATION AND FUSION">CORRELATION AND FUSION</option>
+      </select>
+      <button id="downloadExcelBtn">Download Excel by Domain</button>
+    </div>
+
+    <button id="downloadAllPdfBtn">Download All PDFs</button>
+
+    <div>
+      <select id="recommendedDomain">
+        <option value="">-- Select Domain --</option>
+        <option value="EMBEDDED">EMBEDDED</option>
+        <option value="FPGA">FPGA</option>
+        <option value="RTOS">RTOS</option>
+        <option value="RF">RF</option>
+        <option value="WIRELESS">WIRELESS</option>
+        <option value="SYSTEM ENGG">SYSTEM ENGG</option>
+        <option value="COMM AND DSP">COMM AND DSP</option>
+        <option value="CORRELATION AND FUSION">CORRELATION AND FUSION</option>
+      </select>
+      <button id="downloadRecommendedBtn">Download Recommended</button>
+    </div>
+
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <table id="candidatesTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Domain</th>
+        <th>Email</th>
+        <th>Contact</th>
+        <th>Experience</th>
+        <th>CGPA</th>
+        <th>Final Score</th>
+        <th>Recommended</th>
+      </tr>
+    </thead>
+    <tbody id="candidatesBody">
+      <!-- Data loads here -->
+    </tbody>
+  </table>
+
+  <!-- Excel library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- jsPDF library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+
+  <script src="viewer.js"></script>
+</body>
+</html>

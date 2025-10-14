@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Candidate Info</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body, html {
+      margin: 10px;
+      padding: 150px;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      height: 100%;
+      width: 75%;
+      
+    }
+
+    
+
+    #bgVideo {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+    }
+
+    
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .section-box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 20px;
+    }
+
+    .form-row > div {
+      flex: 1;
+    }
+
+    .upload-box {
+      margin-top: 10px;
+      padding: 15px;
+      text-align: center;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .upload-box img {
+      max-width: 100%;
+      max-height: 180px;
+      border-radius: 6px;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button.save {
+      background: #28a745;
+      color: #fff;
+    }
+
+    button.logout {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    .error {
+      border: 2px solid red !important;
+    }
+  </style>
+
+  <script>
+    // Restrict Access
+    window.onload = function () {
+      if (localStorage.getItem("loggedIn") !== "true") {
+        window.location.href = "index.html";
+      }
+    };
+
+    async function authFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      options.headers["Username"] = "admin@ACAST";
+      options.headers["Password"] = "Air491*";
+      return fetch(url, options);
+    }
+
+    let uploadedImageBase64 = "";
+  </script>
+</head>
+<body>
+  <!-- Background Video -->
+  <video autoplay muted loop id="bgVideo">
+    <source src="ACAST_Final.mp4" type="video/mp4" />
+  </video>
+
+  <div class="container">
+    <h2>Candidate Information</h2>
+
+    <form id="candidateForm" onsubmit="return false;">
+      <!-- Section 1 -->
+      <div class="section-box">
+        <h3>Personal Information</h3>
+        <label>Name:</label>
+        <input type="text" id="candidateName" required />
+
+        <label>Contact Number:</label>
+        <input type="text" id="contact" placeholder="+923001234567 or 03001234567" required />
+
+        <label>Email:</label>
+        <input type="email" id="email" required />
+
+        <label>Gender:</label>
+        <select id="gender" required>
+          <option value="">Select Gender</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Common</option>
+        </select>
+
+        <label>City:</label>
+        <input type="text" id="city" required />
+
+        <label>Image:</label>
+        <div class="upload-box" id="uploadBox">
+          <span id="uploadText">Upload / Drag Image (.jpg, .jpeg, .png)</span>
+          <input type="file" id="imageUpload" accept=".jpg,.jpeg,.png" hidden />
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section-box">
+        <h3>Education Details</h3>
+        <label>Discipline:</label>
+        <input type="text" id="discipline" required />
+
+        <label>CGPA:</label>
+        <input type="number" id="cgpa" step="0.01" required />
+
+        <label>University:</label>
+        <input type="text" id="university" required />
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section-box">
+        <h3>Field of Application</h3>
+        <label>Domain:</label>
+        <select id="domain" required>
+          <option value="">Select Domain</option>
+          <option>EMBEDDED</option>
+          <option>FPGA</option>
+          <option>RTOS</option>
+          <option>RF</option>
+          <option>WIRELESS</option>
+          <option>SYSTEM ENGG</option>
+          <option>COMM AND DSP</option>
+          <option>CORRELATION AND FUSION</option>
+        </select>
+
+        <label>Experience:</label>
+        <select id="experience" required>
+          <option value="">Select Experience</option>
+          <option>Fresh Graduate</option>
+          <option>1 year</option>
+          <option>2 years</option>
+          <option>3 years</option>
+          <option>4 years</option>
+          <option>5+ years</option>
+        </select>
+      </div>
+
+      <div class="btn-group">
+        <button type="button" class="save" onclick="saveCandidateInfo()">Save & Next ➡</button>
+        <button type="button" class="logout" id="logoutBtn">🚪 Logout</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Image upload
+    const uploadBox = document.getElementById("uploadBox");
+    const imageUpload = document.getElementById("imageUpload");
+    const uploadText = document.getElementById("uploadText");
+
+    uploadBox.addEventListener("click", () => imageUpload.click());
+    imageUpload.addEventListener("change", function () { handleFile(this.files[0]); });
+    uploadBox.addEventListener("dragover", (e) => { e.preventDefault(); uploadBox.classList.add("drag-over"); });
+    uploadBox.addEventListener("dragleave", () => uploadBox.classList.remove("drag-over"));
+    uploadBox.addEventListener("drop", (e) => { e.preventDefault(); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+
+    function handleFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        uploadedImageBase64 = e.target.result;
+        uploadText.innerHTML = `<img src="${uploadedImageBase64}" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Validation helpers
+    function isValidPakistaniNumber(num) {
+      return /^(\+92|0)3\d{9}$/.test(num);
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // Save candidate (but do NOT push to DB yet)
+async function saveCandidateInfo() {
+  const name = document.getElementById("candidateName").value.trim();
+  const contact = document.getElementById("contact").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const gender = document.getElementById("gender").value;
+  const city = document.getElementById("city").value.trim();
+  const discipline = document.getElementById("discipline").value.trim();
+  const university = document.getElementById("university").value.trim();
+  const cgpa = document.getElementById("cgpa").value.trim();
+  const domain = document.getElementById("domain").value;
+  const experience = document.getElementById("experience").value;
+
+  let isValid = true;
+
+  // Reset errors
+  document.querySelectorAll("input, select").forEach(el => el.classList.remove("error"));
+
+  if (!name || !contact || !email || !gender || !city || !discipline || !university || !cgpa || !domain || !experience) {
+    alert("⚠ Please fill in all required fields.");
+    isValid = false;
+  }
+
+  if (!isValidPakistaniNumber(contact)) {
+    alert("⚠ Invalid Pakistani contact number format.");
+    document.getElementById("contact").classList.add("error");
+    isValid = false;
+  }
+
+  if (!isValidEmail(email)) {
+    alert("⚠ Invalid email address.");
+    document.getElementById("email").classList.add("error");
+    isValid = false;
+  }
+
+  if (!uploadedImageBase64) {
+    alert("⚠ Please upload an image.");
+    isValid = false;
+  }
+
+  if (!isValid) return;
+
+  // Build candidate object (front-end only at this stage)
+  const candidate = {
+    name, contact, email, gender, city, discipline,
+    university, cgpa: parseFloat(cgpa) || 0,
+    domain, experience, image: uploadedImageBase64
+  };
+
+  // Only keep it in localStorage so evaluation page can use it
+  localStorage.setItem("currentCandidate", JSON.stringify(candidate));
+
+  // 🚫 DO NOT SAVE TO BACKEND OR MAIN candidateList YET 🚫
+  // let evaluation page finalize and save
+
+  // Redirect to evaluation
+  window.location.href = "evaluation.html";
+}
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("loggedIn");
+  window.location.href = "index.html";
+});
+
+  </script>
+</body>
+</html>

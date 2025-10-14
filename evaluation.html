@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Candidate Evaluation</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* Basic reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, Arial, sans-serif; }
+    html,body { height:100%; color:#111;  }
+
+    /* Background video */
+    #bgVideo {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.75);
+    }
+
+    .wrapper { padding: 24px; max-width:1200px; margin: 0 auto; }
+
+    .container {
+      background-color: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 8px 30px rgba(10,20,40,0.08);
+      margin-top: 80px;
+    }
+
+    h2 { font-size: 20px; margin-bottom: 14px; color: #14375a; }
+
+    /* Candidate summary box */
+    .summary-box {
+      display:flex;
+      gap: 18px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1px solid #e6eef7;
+      margin-bottom: 14px;
+    }
+    .summary-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 8px;
+      background: #f0f3f6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex-shrink:0;
+      border: 1px solid #e0e6eb;
+    }
+    .summary-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+
+    .summary-details { flex:1; }
+    .summary-details p { margin: 6px 0; font-size: 14px; color:#1b2b3a; }
+    .summary-details p small { color:#425a70; font-weight:500; }
+
+    .eligible-row { margin-top: 8px; display:flex; gap:12px; align-items:center; }
+
+    /* Sections */
+    .section {
+      margin-bottom: 14px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #eef3f9;
+    }
+    .section h3 { font-size: 15px; margin-bottom: 10px; color: #16304a; }
+
+    /* criteria container */
+    .criteria-grid { display:flex; flex-wrap:wrap; gap: 10px; }
+    .panelMember {
+      width: calc(33.333% - 10px);
+      min-width: 200px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .panelMember label { font-size: 13px; color:#234a63; }
+    .panelMember input[type="number"], .panelMember input[type="text"], .panelMember select {
+      padding:8px 10px; border-radius:8px; border:1px solid #d6e6f5; background:#f8fbff;
+    }
+
+    .small-note { font-size:12px; color:#6b7f8f; margin-top:6px; }
+
+    .btn-row { display:flex; gap:10px; margin-top:12px; }
+    button { cursor:pointer; border: none; padding:10px 12px; border-radius:8px; font-weight:600; }
+    .back-btn { background:#e7eef8; color:#14375a; }
+    .save-btn { background:linear-gradient(90deg,#0b74d1,#0457a6); color:white; }
+    .show-btn { background:#f8f9fb; color:#234a63; border:1px solid #e3eaf4; }
+
+    .result { margin-top:10px; min-height:20px; color:#064e3b; font-weight:600; }
+
+    /* Candidate list */
+    #candidateTableContainer { margin-top:20px; overflow:auto; }
+    table.cand-table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; }
+    table.cand-table th, table.cand-table td { padding:8px 10px; border-bottom:1px solid #eef3fb; text-align:left; font-size:13px; vertical-align: middle; }
+    table.cand-table thead th { background:#e9f1fb; font-weight:700; color:#173652; }
+    .tbl-photo { width:60px; height:60px; object-fit:cover; border-radius:6px; display:block; }
+
+    .controls { margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .danger { background:#ffecec; color:#9b1c1c; border:1px solid #f5c2c2; padding:8px 12px; border-radius:8px; }
+
+    /* modal simple */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); align-items:center; justify-content:center; z-index:1000; }
+    .modal-content { background:white; padding:18px; border-radius:8px; width:360px; }
+    .close { float:right; cursor:pointer; padding:4px; }
+
+    /* error styles */
+    .input-error { color:#9b1c1c; font-size:12px; margin-top:6px; display:none; }
+    .invalid { border-color:#ffb4b4 !important; background: #fff6f6 !important; }
+
+    /* responsive */
+    @media (max-width: 880px) {
+      .panelMember { width: calc(50% - 10px); }
+      .summary-photo { width: 96px; height:96px; }
+    }
+    @media (max-width: 520px) {
+      .panelMember { width: 100%; }
+      .summary-box { flex-direction:column; align-items:flex-start; gap:12px; }
+      .btn-row { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <!-- background video (optional) -->
+  <video autoplay muted loop id="bgVideo" playsinline>
+    <source src="ACAST_Final.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+
+  <div class="wrapper">
+    <div class="container">
+      <h2>Candidate Evaluation</h2>
+
+      <!-- candidate summary -->
+      <div id="candidateSummary" class="summary-box" aria-live="polite">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- Test score + weight -->
+      <div class="section">
+        <h3>Test Score</h3>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div>
+            <label style="font-size:13px;color:#234a63;">Raw Test Score (0-50)</label><br>
+            <input id="testScore" type="number" min="0" max="50" placeholder="Enter Test Score (0-50)" style="width:160px; padding:8px; border-radius:8px; border:1px solid #dceaf8;">
+            <div id="testScoreError" class="input-error">Invalid test score</div>
+          </div>
+
+          <div>
+            <label style="font-size:13px;color:#234a63;">Test Weight (%)</label><br>
+            <input id="testWeight" type="number" min="0" max="100" value="30" style="width:120px;padding:8px;border-radius:8px;border:1px solid #dceaf8;">
+            <div id="testWeightError" class="input-error">Enter a valid test weight</div>
+          </div>
+
+          <div>
+            <label style="font-size:13px;color:#234a63;">Interview Weight (%)</label><br>
+            <input id="interviewWeight" type="number" min="0" max="100" value="70" style="width:120px;padding:8px;border-radius:8px;border:1px solid #dceaf8;">
+            <div id="interviewWeightError" class="input-error">Enter a valid interview weight</div>
+          </div>
+
+          <div style="flex:1"></div>
+        </div>
+        <div id="weightNote" class="small-note">Default weights: Test 30% + Interview 70%. You can adjust them; if they don't add to 100% they will be normalized.</div>
+      </div>
+
+      <!-- Interview Evaluation -->
+      <div class="section">
+        <h3>Interview Evaluation</h3>
+
+        <div id="criteriaContainer" class="criteria-grid" aria-label="Interview criteria">
+          <!-- fixed criteria (rendered by JS) -->
+        </div>
+
+        <div style="margin-top:10px;">
+          <button id="addCriteriaBtn" type="button" style="background:#eef7ff; color:#0b63b3; border:1px solid #d6eafc; padding:8px 10px; border-radius:8px;">+ Additional (Optional)</button>
+        </div>
+      </div>
+
+      <!-- Suitability (Yes/No) -->
+      <div style="display:flex; gap:12px; align-items:center;">
+        <div class="eligible-row">
+          <label style="font-weight:600; color:#234a63; margin-right:8px;">Suitability for Lab</label>
+          <select id="suitabilitySelect" style="padding:8px 10px; border-radius:8px; border:1px solid #dbeefc;">
+            <option value="">-- Select --</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+          <div id="suitabilityError" class="input-error">Please choose Yes or No</div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- action buttons -->
+        <div class="btn-row">
+          <button id="backBtn" class="back-btn">⬅ Back</button>
+          <button id="saveBtn" class="save-btn">Save</button>
+          <button id="showListBtn" class="show-btn">Show List</button>
+        </div>
+      </div>
+
+      <div id="result" class="result" aria-live="polite"></div>
+
+      <!-- Candidate list + controls -->
+      <div id="candidateTableContainer" style="margin-top:20px;"></div>
+
+      <div class="controls" style="margin-top:12px;">
+        <button id="deleteBtn" class="danger">Delete Selected</button>
+        <div style="flex:1"></div>
+        <button id="downloadDomainBtn" style="background:#fff; border:1px solid #d6eafc; padding:8px 12px; border-radius:8px;">Download Excel by Domain</button>
+        <button id="downloadPdfBtn" style="background:linear-gradient(90deg,#0b74d1,#0457a6); color:#fff; padding:8px 12px; border-radius:8px;">Download PDF (All)</button>
+          <!-- Recommended Download button (place near your "Download Excel by Domain" button) -->
+<button id="openRecommendedModalBtn"
+        style="background:#fff; border:1px solid #d6eafc; padding:8px 12px; border-radius:8px;">
+  Download Recommended PDF
+</button>
+
+<!-- Recommended modal (place once anywhere inside <body>) -->
+<div id="recommendedModal" class="modal" role="dialog" aria-modal="true" style="display:none;">
+  <div class="modal-content" style="width:420px;">
+    <span class="close" id="recommendedModalClose" style="cursor:pointer;">&times;</span>
+    <h3 style="margin-top:4px;">Select domain to download</h3>
+
+    <select id="recommendedDomainSelect"
+            style="width:100%; padding:8px; margin-top:12px; border-radius:6px; border:1px solid #e6eef7;">
+      <option value="">-- Select Domain --</option>
+    </select>
+
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+      <button id="recommendedModalCancel" style="padding:8px 12px; border-radius:6px;">Cancel</button>
+      <button id="recommendedModalDownload"
+              style="background:#0b74d1;color:#fff;padding:8px 12px;border-radius:6px;">Download</button>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- domain modal -->
+  <div id="excelModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h3>Select domain to download</h3>
+      <select id="domainSelect" style="width:100%; padding:8px; margin-top:8px; border-radius:6px; border:1px solid #e6eef7;">
+        <option value="">-- Select Domain --</option>
+        <option value="EMBEDDED">EMBEDDED</option>
+        <option value="FPGA">FPGA</option>
+        <option value="RTOS">RTOS</option>
+        <option value="RF">RF</option>
+        <option value="WIRELESS">WIRELESS</option>
+        <option value="SYSTEM ENGG">SYSTEM ENGG</option>
+        <option value="COMM AND DSP">COMM AND DSP</option>
+        <option value="CORRELATION AND FUSION">CORRELATION AND FUSION</option>
+      </select>
+      <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+        <button id="modalCancel">Cancel</button>
+        <button id="modalDownload" style="background:#0b74d1;color:#fff;padding:8px 12px;border-radius:6px;">Download</button>
+       
+
+      </div>
+    </div>
+  </div>
+
+  <!-- libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+  (function(){
+    const BACKEND_URL = "http://localhost:8000"; // adjust if needed
+
+    // fixed criteria (Suitability removed from scoring)
+    const fixedCriteria = [
+      "Intellect",
+      "Quest for Knowledge",
+      "Professional Knowledge",
+      "Experience",
+      "Appearance & Bearing",
+      "Communication Skills"
+    ];
+
+    let candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+    let companyLogoBase64 = "";
+
+    // ---------------- helpers ----------------
+    function escapeHtml(s){ if(s===null||s===undefined) return ""; return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+    function sanitizeFilename(s){ return String(s||"").replace(/[^\w\-_. ]+/g,"").replace(/\s+/g,"_"); }
+    function setResult(msg, ok=true){
+      const el = document.getElementById("result");
+      el.style.color = ok ? "#064e3b" : "#9b1c1c";
+      el.textContent = msg;
+    }
+
+    // ---------------- current candidate helper ----------------
+    function getCurrentCandidateFromStorage(){
+      let cur = JSON.parse(localStorage.getItem("currentCandidate") || "null");
+      if(cur) return cur;
+      // fallback: most recent candidate in candidateList
+      const list = JSON.parse(localStorage.getItem("candidateList") || "[]");
+      if(list && list.length) return list[list.length - 1];
+      return null;
+    }
+    // Replace "logo.png" with the correct path to your watermark/logo file
+fetch("ACAST_logo.png")   // <-- if your logo is in the same folder as evaluation.html
+  .then(res => res.blob())
+  .then(blob => {
+    const reader = new FileReader();
+    reader.onload = function () {
+      companyLogoBase64 = reader.result; // ✅ store as base64 for PDF
+    };
+    reader.readAsDataURL(blob);
+  })
+  .catch(err => console.error("Logo preload failed:", err));
+
+
+    // ---------------- image watermark loader (if acast logo img present) ----------------
+    (function loadCompanyLogo(){
+      const logo = document.getElementById("companyLogo");
+      if(!logo) return;
+      try {
+        if (logo.complete && logo.naturalWidth) {
+          companyLogoToBase64(logo);
+        } else {
+          logo.onload = () => companyLogoToBase64(logo);
+        }
+      } catch(e){}
+    })();
+
+    function companyLogoToBase64(imgEl){
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = imgEl.naturalWidth;
+        canvas.height = imgEl.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.globalAlpha = 0.08;
+        ctx.drawImage(imgEl, 0, 0);
+        companyLogoBase64 = canvas.toDataURL("image/png");
+      } catch(e){ companyLogoBase64 = ""; }
+    }
+
+    // ---------------- render criteria inputs ----------------
+    function renderFixedCriteria(){
+      const container = document.getElementById("criteriaContainer");
+      container.innerHTML = "";
+      fixedCriteria.forEach((label, idx) => {
+        const d = document.createElement("div");
+        d.className = "panelMember";
+        d.innerHTML = `
+          <label>${escapeHtml(label)}</label>
+          <input type="number" class="criteriaScore" min="0" max="10" placeholder="0-10" data-name="${escapeHtml(label)}">
+          <div class="input-error criteria-error">Enter score 0–10</div>
+        `;
+        container.appendChild(d);
+      });
+      // attach validation listeners
+      attachCriteriaValidation();
+    }
+
+    // ---------------- add optional criteria ----------------
+    document.getElementById("addCriteriaBtn").addEventListener("click", addOptionalCriteria);
+    function addOptionalCriteria(){
+      const container = document.getElementById("criteriaContainer");
+      const div = document.createElement("div");
+      div.className = "panelMember";
+      div.innerHTML = `
+        <input type="text" class="criteriaName" placeholder="Custom Criteria Name">
+        <input type="number" class="criteriaScore" min="0" max="10" placeholder="0-10">
+        <div class="input-error criteria-error">Enter score 0–10</div>
+      `;
+      container.appendChild(div);
+      attachCriteriaValidation();
+      div.scrollIntoView({behavior:"smooth", block:"center"});
+    }
+
+    function attachCriteriaValidation(){
+      Array.from(document.querySelectorAll(".criteriaScore")).forEach(inp=>{
+        inp.removeEventListener("input", onCriteriaInput);
+        inp.addEventListener("input", onCriteriaInput);
+      });
+    }
+    function onCriteriaInput(e){
+      const val = e.target.value;
+      const err = e.target.parentElement.querySelector(".criteria-error");
+      if(val === "" || isNaN(Number(val)) || Number(val) < 0 || Number(val) > 10){
+        e.target.classList.add("invalid");
+        if(err) { err.style.display = "block"; err.textContent = "Enter score 0–10"; }
+      } else {
+        e.target.classList.remove("invalid");
+        if(err) err.style.display = "none";
+      }
+    }
+
+    // ---------------- test & weight validation ----------------
+    const testScoreEl = document.getElementById("testScore");
+    const testWeightEl = document.getElementById("testWeight");
+    const interviewWeightEl = document.getElementById("interviewWeight");
+    const testScoreErrorEl = document.getElementById("testScoreError");
+    const testWeightErrorEl = document.getElementById("testWeightError");
+    const interviewWeightErrorEl = document.getElementById("interviewWeightError");
+    const weightNoteEl = document.getElementById("weightNote");
+
+    function validateTestScore(){
+      const v = testScoreEl.value;
+      if(v === "" || isNaN(Number(v)) || Number(v) < 0 || Number(v) > 50){
+        testScoreEl.classList.add("invalid");
+        testScoreErrorEl.style.display = "block";
+        testScoreErrorEl.textContent = "Enter a valid test score 0–50";
+        return false;
+      }
+      testScoreEl.classList.remove("invalid");
+      testScoreErrorEl.style.display = "none";
+      return true;
+    }
+    function validateWeights(){
+      let ok = true;
+      const tw = Number(testWeightEl.value);
+      const iw = Number(interviewWeightEl.value);
+      if(isNaN(tw) || tw < 0 || tw > 100){ testWeightEl.classList.add("invalid"); testWeightErrorEl.style.display = "block"; ok = false; }
+      else { testWeightEl.classList.remove("invalid"); testWeightErrorEl.style.display = "none"; }
+
+      if(isNaN(iw) || iw < 0 || iw > 100){ interviewWeightEl.classList.add("invalid"); interviewWeightErrorEl.style.display = "block"; ok = false; }
+      else { interviewWeightEl.classList.remove("invalid"); interviewWeightErrorEl.style.display = "none"; }
+
+      if(ok){
+        const sum = tw + iw;
+        if(sum !== 100){
+          weightNoteEl.textContent = `Weights normalized (sum=${sum}%). We will normalize them proportionally to sum.`;
+          weightNoteEl.style.color = "#a66a00";
+        } else {
+          weightNoteEl.textContent = "Default weights: Test 30% + Interview 70%. You can adjust them; if they don't add to 100% they will be normalized.";
+          weightNoteEl.style.color = "#6b7f8f";
+        }
+      } else {
+        weightNoteEl.textContent = "Enter valid weights (0–100).";
+        weightNoteEl.style.color = "#9b1c1c";
+      }
+      return ok;
+    }
+
+    testScoreEl.addEventListener("input", validateTestScore);
+    testWeightEl.addEventListener("input", validateWeights);
+    interviewWeightEl.addEventListener("input", validateWeights);
+
+    // ---------------- populate candidate summary ----------------
+    function populateCandidateSummary(){
+      const stored = getCurrentCandidateFromStorage();
+      const el = document.getElementById("candidateSummary");
+      if(!el){
+        console.warn("candidateSummary missing");
+        return;
+      }
+      if(!stored){
+        el.innerHTML = `<div style="padding:14px;">No candidate loaded. Go back to Candidate page and click Save & Next.</div>`;
+        return;
+      }
+
+      const photoHtml = stored.image ? `<img src="${stored.image}" alt="photo">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#6b7f8f;font-size:13px;">No Image</div>`;
+
+      // include extra personal fields (contact, email, gender, city, discipline) if available
+      const contact = stored.contactNumber || stored.contact || "";
+      const email = stored.email || "";
+      const gender = stored.gender || "";
+      const city = stored.city || "";
+      const discipline = stored.discipline || "";
+
+      el.innerHTML = `
+        <div class="summary-photo">${photoHtml}</div>
+        <div class="summary-details">
+          <p><small>Name:</small> ${escapeHtml(stored.name || "")}</p>
+          <p><small>University:</small> ${escapeHtml(stored.university || "")}</p>
+          <p><small>Discipline:</small> ${escapeHtml(discipline)}</p>
+          <p><small>CGPA:</small> ${escapeHtml(stored.cgpa || "")}</p>
+          <p><small>Domain:</small> ${escapeHtml(stored.domain || "")}</p>
+          <p><small>Experience:</small> ${escapeHtml(stored.experience || "")}</p>
+          <p><small>Contact:</small> ${escapeHtml(contact)}</p>
+          <p><small>Email:</small> ${escapeHtml(email)}</p>
+          <p><small>Gender:</small> ${escapeHtml(gender)} <small style="margin-left:12px">City:</small> ${escapeHtml(city)}</p>
+        </div>
+      `;
+
+      // prefill if stored had values from previous evaluation session
+      setTimeout(() => {
+        if(stored.testScore !== undefined) document.getElementById("testScore").value = stored.testScore;
+        if(stored.criteria && stored.criteria.length){
+          const scoreInputs = Array.from(document.querySelectorAll(".criteriaScore"));
+          const nameInputs = Array.from(document.querySelectorAll(".criteriaName"));
+          stored.criteria.forEach((cr, idx) => {
+            // match by name first
+            const foundByName = Array.from(document.querySelectorAll(".criteriaScore")).find(inp=>{
+              const parent = inp.closest(".panelMember");
+              const label = parent && parent.querySelector("label");
+              if(label && label.textContent.trim() === cr.name) return true;
+              return false;
+            });
+            if(foundByName) foundByName.value = cr.score;
+            else if(scoreInputs[idx]) scoreInputs[idx].value = cr.score;
+          });
+        }
+        if(stored.suitability) document.getElementById("suitabilitySelect").value = stored.suitability;
+      }, 60);
+    }
+
+    // ---------------- recalc relative grades per domain (40/30/30 split) ----------------
+    function recalculateRelativeGrades(list){
+      const groups = {};
+      list.forEach(c => {
+        if(!groups[c.domain]) groups[c.domain] = [];
+        groups[c.domain].push(c);
+      });
+      Object.values(groups).forEach(group => {
+        group.sort((a,b)=> (b.finalScore||0) - (a.finalScore||0));
+        const n = group.length;
+        if(n===0) return;
+        let rec = Math.ceil(n * 0.4);
+        let sec = Math.ceil(n * 0.3);
+        // adjust if rec+sec > n
+        if(rec + sec > n){
+          sec = Math.max(0, n - rec);
+        }
+        const rest = n - rec - sec;
+        group.forEach((c,i)=>{
+          if(i < rec) c.recommended = "Recommended";
+          else if(i < rec + sec) c.recommended = "Stand By";
+          else c.recommended = "Not Recommended";
+        });
+      });
+    }
+
+    // ---------------- render candidate list ----------------
+    function renderCandidateList(){
+      candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+      const container = document.getElementById("candidateTableContainer");
+      if(!container) return;
+      if(!candidateList.length){
+        container.innerHTML = `<div style="padding:12px; background:#fff; border:1px solid #eef6ff; border-radius:8px;">No candidates saved yet.</div>`;
+        return;
+      }
+
+      // Build table
+      let html = `<table class="cand-table" role="table" aria-label="Candidates">
+        <thead>
+          <tr>
+            <th><input id="selectAll" type="checkbox" aria-label="Select all"></th>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>University</th>
+            <th>CGPA</th>
+            <th>Domain</th>
+            <th>Experience</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Test</th>
+            <th>Interview Avg</th>
+            <th>Final Score</th>
+            <th>Suitability</th>
+            <th>Remarks</th>
+          </tr>
+        </thead><tbody>`;
+
+      candidateList.forEach(c=>{
+        const imgHtml = c.image ? `<img src="${c.image}" alt="photo" class="tbl-photo">` : `<div style="width:60px;height:60px;border-radius:6px;background:#f1f5f8;display:flex;align-items:center;justify-content:center;color:#6b7f8f;">—</div>`;
+        html += `<tr>
+          <td><input class="candidate-select" data-id="${escapeHtml(String(c.id||""))}" type="checkbox"></td>
+          <td>${imgHtml}</td>
+          <td>${escapeHtml(c.name||"")}</td>
+          <td>${escapeHtml(c.university||"")}</td>
+          <td>${escapeHtml(c.cgpa||"")}</td>
+          <td>${escapeHtml(c.domain||"")}</td>
+          <td>${escapeHtml(c.experience||"")}</td>
+          <td>${escapeHtml(c.contactNumber || c.contact || "")}</td>
+          <td>${escapeHtml(c.email || "")}</td>
+          <td>${(c.testScore!==undefined)?Number(c.testScore).toFixed(2):""}</td>
+          <td>${(c.avgInterviewRaw!==undefined)?Number(c.avgInterviewRaw).toFixed(2):""}</td>
+          <td>${(c.finalScore!==undefined)?Number(c.finalScore).toFixed(2):""}</td>
+          <td>${escapeHtml(c.suitability||"")}</td>
+          <td>${escapeHtml(c.recommended||"")}</td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+
+      // select all behavior
+      const selectAllEl = document.getElementById("selectAll");
+      if(selectAllEl){
+        selectAllEl.addEventListener("change", function(e){
+          document.querySelectorAll(".candidate-select").forEach(cb=>cb.checked = e.target.checked);
+        });
+      }
+    }
+
+    // ---------------- compute + save candidate ----------------
+    async function saveCandidate(){
+      // Validate currentCandidate (must exist)
+      const stored = getCurrentCandidateFromStorage();
+      if(!stored){
+        setResult("No candidate loaded. Go back to candidate form and Save & Next.", false);
+        return;
+      }
+      // Ensure personal info exists (name required at least)
+      const missingPersonal = [];
+      if(!stored.name) missingPersonal.push("Name");
+      // If you want to strictly require contact/email/etc, uncomment the checks
+      if(!stored.contactNumber && !stored.contact) missingPersonal.push("Contact");
+      if(!stored.email) missingPersonal.push("Email");
+      if(!stored.domain) missingPersonal.push("Domain");
+      if(missingPersonal.length){
+        setResult(`Candidate personal info missing: ${missingPersonal.join(", ")}. Please update candidate page.`, false);
+        return;
+      }
+
+      // Validate test score
+      if(!validateTestScore()) { setResult("Invalid test score 0–50", false); return; }
+
+      // Validate weights
+      if(!validateWeights()) { setResult("Invalid weight values", false); return; }
+
+      // Validate suitability (required)
+      const suitability = document.getElementById("suitabilitySelect").value;
+      if(!suitability){ document.getElementById("suitabilityError").style.display = "block"; setResult("Select Suitability (Yes/No)", false); return; }
+      else { document.getElementById("suitabilityError").style.display = "none"; }
+
+      // gather criteria
+      const panelBoxes = Array.from(document.querySelectorAll("#criteriaContainer .panelMember"));
+      if(panelBoxes.length === 0){
+        setResult("Please enter interview criteria", false); return;
+      }
+      const criteria = [];
+      for(let i=0;i<panelBoxes.length;i++){
+        const box = panelBoxes[i];
+        const scoreInput = box.querySelector(".criteriaScore");
+        const nameInput = box.querySelector(".criteriaName");
+        let name = "";
+        if(nameInput) name = (nameInput.value || "").trim();
+        else {
+          const label = box.querySelector("label");
+          name = label ? (label.textContent || "").trim() : `Criteria ${i+1}`;
+        }
+        const sc = scoreInput ? parseFloat(scoreInput.value) : NaN;
+        if(isNaN(sc) || sc < 0 || sc > 10){
+          setResult(`Enter valid scores (0–10) for "${name}"`, false); 
+          // highlight invalid input
+          if(scoreInput) { scoreInput.classList.add("invalid"); }
+          return;
+        }
+        criteria.push({ name, score: sc });
+      }
+
+      // compute weights (normalize if sum != 100)
+      const rawTestWeight = Number(testWeightEl.value);
+      const rawInterviewWeight = Number(interviewWeightEl.value);
+      let tw = rawTestWeight;
+      let iw = rawInterviewWeight;
+      const sum = tw + iw;
+      if(sum <= 0){
+        setResult("Weights must be > 0", false); return;
+      }
+      if(sum !== 100){
+        // normalize proportionally
+        tw = (tw / sum) * 100;
+        iw = (iw / sum) * 100;
+      }
+      // test raw
+      const testScoreRaw = Number(testScoreEl.value);
+
+      const totalInterviewRaw = criteria.reduce((acc,c)=> acc + (Number(c.score)||0), 0);
+      const noOfSections = criteria.length || 1;
+
+      const avgInterviewRaw = totalInterviewRaw / noOfSections; // 0–10
+
+      // Weighted calculations using user-defined (normalized) weights
+      // Test Max is 50 (fixed)
+      const weightedTest = (testScoreRaw / 50) * tw; // tw is percent
+      // Interview: convert total raw to percentage of max (noOfSections*10)
+      const weightedInterview = (totalInterviewRaw / (noOfSections * 10)) * iw; // iw is percent
+      const finalScore = weightedTest + weightedInterview; // out of 100
+
+      const candidate = {
+        ...stored,
+        testScore: +testScoreRaw,
+        weightedTest: +weightedTest.toFixed(2),
+        criteria,
+        avgInterviewRaw: +avgInterviewRaw.toFixed(2),
+        avgInterviewWeighted: +weightedInterview.toFixed(2),
+        finalScore: +finalScore.toFixed(2),
+        suitability: suitability,
+        // recommended will be set after recalculation
+        recommended: ""
+      };
+
+      // Save to backend if available (best-effort)
+      try {
+        const res = await fetch(`${BACKEND_URL}/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(candidate)
+        });
+        if(res.ok){
+          const data = await res.json();
+          if(data && data.id) candidate.id = data.id;
+        } else {
+          console.warn("Backend save returned", res.status);
+        }
+      } catch(err){
+        console.warn("Backend save failed:", err);
+      }
+
+      // Append locally & recalc relative ranks
+      candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+      candidateList.push(candidate);
+      recalculateRelativeGrades(candidateList);
+
+      // Persist
+      localStorage.setItem("candidateList", JSON.stringify(candidateList));
+
+      // find saved candidate (last item)
+      const savedCandidate = candidateList[candidateList.length - 1];
+
+      setResult(`Saved: ${savedCandidate.name} — Final Score: ${savedCandidate.finalScore.toFixed(2)} (${savedCandidate.recommended})`, true);
+
+      // Instead, attach it only to your "Show List" button
+document.getElementById("showListBtn").addEventListener("click", () => {
+  const candidateList = JSON.parse(localStorage.getItem("candidateList")) || [];
+  renderCandidateList(candidateList);
+
+  // ✅ Smooth scroll to the list
+  const listEl = document.getElementById("candidateListContainer");
+  if (listEl) {
+    listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+})
+    }
+
+    // ---------------- delete selected ----------------
+    async function deleteSelectedCandidates(){
+      const boxes = Array.from(document.querySelectorAll(".candidate-select:checked"));
+      if(!boxes.length){ alert("Select at least one candidate to delete."); return; }
+      if(!confirm(`Delete ${boxes.length} selected candidate(s)? This will remove them locally and attempt to remove from server.`)) return;
+
+      const selectedIds = boxes.map(cb=>String(cb.dataset.id));
+      // update local list
+      let cur = JSON.parse(localStorage.getItem("candidateList") || "[]");
+      const selectedSet = new Set(selectedIds);
+      const remaining = cur.filter(c => !selectedSet.has(String(c.id)));
+      localStorage.setItem("candidateList", JSON.stringify(remaining));
+      candidateList = remaining;
+      renderCandidateList();
+      setResult(`Deleted ${selectedIds.length} candidate(s) locally.`, true);
+
+      // If there are numeric server ids, call backend /delete
+      const serverIds = selectedIds.filter(id => /^\d+$/.test(id)).map(id=>Number(id));
+      if(serverIds.length){
+        try{
+          const res = await fetch(`${BACKEND_URL}/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: serverIds })
+          });
+          if(res.ok){
+            const data = await res.json();
+            console.log("Server deletion response:", data);
+          } else {
+            console.warn("Server delete returned", res.status);
+          }
+        } catch(err){
+          console.warn("Delete request failed:", err);
+          alert("Deleted locally but could not delete on server (network error).");
+        }
+      }
+    }
+
+    // ---------------- Download Excel for selected domain (new layout) ----------------
+    function openExcelModal(){ document.getElementById("excelModal").style.display = "flex"; }
+    function closeExcelModal(){ document.getElementById("excelModal").style.display = "none"; }
+    document.getElementById("downloadDomainBtn").addEventListener("click", openExcelModal);
+    document.getElementById("closeModal").addEventListener("click", closeExcelModal);
+    document.getElementById("modalCancel").addEventListener("click", closeExcelModal);
+    document.getElementById("modalDownload").addEventListener("click", function(){
+      const domain = document.getElementById("domainSelect").value;
+      if(!domain){ alert("Please select a domain"); return; }
+      downloadSelectedDomainExcel(domain);
+      closeExcelModal();
+    });
+
+    function downloadSelectedDomainExcel(domain){
+      const candidates = JSON.parse(localStorage.getItem("candidateList") || "[]").filter(c => c.domain === domain);
+      if(!candidates.length){ alert("No candidates for " + domain); return; }
+      const today = new Date().toLocaleDateString();
+
+       // ✅ Sort by Final Score descending (fallback to testScore if finalScore missing)
+  candidates.sort((a, b) => {
+    const scoreA = (a.finalScore !== undefined ? a.finalScore : a.testScore) || 0;
+    const scoreB = (b.finalScore !== undefined ? b.finalScore : b.testScore) || 0;
+    return scoreB - scoreA; // descending
+  });
+
+
+
+      // New headers: Sr no, Name, Education (discipline), Experience, Contact Number, Email, Suitability for lab, Avg test score, Avg Interview scores, Final scores, Remarks
+      const rows = candidates.map((c, idx) => {
+        return {
+          "S No": idx + 1,
+          "Name": c.name || "",
+          "Education": c.discipline || c.university || "",
+          "Experience": c.experience || "",
+          "Contact Number": c.contactNumber || c.contact || "",
+          "Email": c.email || "",
+          "Suitability for Lab": c.suitability || "",
+          "Avg Test Score": c.testScore ?? "",
+          "Avg Interview Score (raw)": c.avgInterviewRaw ?? "",
+          "Final Score": c.finalScore ?? "",
+          "Remarks": c.recommended ?? ""
+        };
+      });
+
+      const headerRows = [
+        ["ACAST Avionics Division"],
+        [`Domain: ${domain}`, `Date: ${today}`],
+        [] // empty row before table headings
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(rows, { origin: "A4" });
+      XLSX.utils.sheet_add_aoa(ws, headerRows, { origin: "A1" });
+
+      // merge A1 header across columns
+      const colCount = Object.keys(rows[0]).length;
+      ws["!merges"] = ws["!merges"] || [];
+      ws["!merges"].push({ s:{r:0,c:0}, e:{r:0,c:colCount-1} });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, domain.replace(/\s+/g,"_"));
+      XLSX.writeFile(wb, `${sanitizeFilename(domain)}_Candidates_${(new Date()).toISOString().slice(0,10)}.xlsx`);
+    }
+
+    // ---------------- Download PDF (professional layout) ----------------
+    function downloadAllPDF(){
+      const all = JSON.parse(localStorage.getItem("candidateList") || "[]");
+      if(!all.length){ alert("No candidates to export"); return; }
+      if(!window.jspdf || !window.jspdf.jsPDF){ alert("jsPDF not loaded"); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:"pt", format:"a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 40;
+
+      all.forEach((c, idx) => {
+        // watermark logo
+        if (companyLogoBase64) {
+  try {
+    doc.setGState(new doc.GState({ opacity: 0.1 })); // ✅ transparent watermark
+    const imgType = companyLogoBase64.startsWith("data:image/png") ? "PNG" : "JPEG";
+    doc.addImage(companyLogoBase64, imgType, pageW/2 - 150, pageH/2 - 150, 300, 300);
+    doc.setGState(new doc.GState({ opacity: 1 })); // reset opacity
+  } catch (e) {
+    console.warn("Watermark addImage failed", e);
+  }
+}
+
+
+        // header
+        doc.setFillColor(22, 43, 77);
+        doc.rect(0, 0, pageW, 70, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.text("ACAST Avionics Division", pageW / 2, 44, { align: "center" });
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+
+        // candidate info + photo box
+        let y = 90;
+        const infoW = pageW - margin * 2 - 160 - 12;
+        doc.rect(margin, y, infoW, 160);
+        doc.setFontSize(12);
+        let tY = y + 20;
+        doc.text(`Name: ${c.name || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`University: ${c.university || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`Education: ${c.discipline || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`CGPA: ${c.cgpa || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`Domain: ${c.domain || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`Experience: ${c.experience || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`Contact: ${c.contactNumber || c.contact || ""}`, margin + 8, tY); tY += 16;
+        doc.text(`Email: ${c.email || ""}`, margin + 8, tY);
+
+        const photoX = margin + infoW + 12;
+        const photoY = y;
+        const photoW = 160;
+        const photoH = 160;
+        doc.rect(photoX, photoY, photoW, photoH);
+        if (c.image) {
+          try {
+            const imgType = c.image.startsWith("data:image/png") ? "PNG" : "JPEG";
+            doc.addImage(c.image, imgType, photoX + 4, photoY + 4, photoW - 8, photoH - 8);
+          } catch (e) {
+            console.warn("Candidate photo addImage failed:", e);
+          }
+        } else {
+          doc.setFontSize(10);
+          doc.text("No Image", photoX + photoW / 2, photoY + photoH / 2, { align: "center" });
+        }
+
+        // Test scores box
+        y += 180;
+        const boxW = pageW - margin * 2;
+        doc.rect(margin, y, boxW, 60);
+        doc.setFontSize(12);
+        const testAvgPct = ((c.testScore / 50) * 100).toFixed(2) + "%";
+        doc.text(`Test Score: ${c.testScore ?? ""} (${testAvgPct})`, margin + 8, y + 20);
+        doc.text(`Weighted Test: ${c.weightedTest?.toFixed(2) ?? "0"}`, margin + 8, y + 38);
+
+        // Interview Scores table
+        y += 80;
+        const criteriaList = c.criteria || [];
+        const rowHeight = 16;
+        const headerHeight = 40;
+        const footerHeight = 30;
+        const interviewBoxH = headerHeight + footerHeight + criteriaList.length * rowHeight;
+
+        doc.rect(margin, y, boxW, interviewBoxH);
+        doc.setFontSize(12);
+        doc.text("Evaluation Scores:", margin + 8, y + 18);
+
+        const col1X = margin + 12;
+        const col2X = margin + 350;
+        let rowY = y + 36;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Criteria", col1X, rowY);
+        doc.text("Score", col2X, rowY);
+        doc.setFont("helvetica", "normal");
+
+        rowY += 10;
+        doc.line(margin + 8, rowY, margin + boxW - 8, rowY);
+        rowY += 10;
+
+        // Print criteria rows
+        (criteriaList || []).forEach((cr) => {
+          doc.text(String(cr.name || ""), col1X, rowY);
+          doc.text(String(cr.score ?? ""), col2X, rowY);
+          rowY += rowHeight;
+        });
+
+        // Averages row
+        rowY += 6;
+        const interviewAvgPct = ((c.avgInterviewRaw / 10) * 100).toFixed(2) + "%";
+        doc.text(`Average (raw): ${(c.avgInterviewRaw !== undefined) ? Number(c.avgInterviewRaw).toFixed(2) : "0"} (${interviewAvgPct})`, col1X, rowY);
+        doc.text(`Weighted Interview: ${(c.avgInterviewWeighted !== undefined) ? Number(c.avgInterviewWeighted).toFixed(2) : "0"}`, col2X, rowY);
+
+        // Move y below interview box
+        y = y + interviewBoxH + 20;
+
+        // Final score box
+        doc.rect(margin, y, boxW, 70);
+        doc.setFontSize(13);
+        doc.text(`Final Score: ${(c.finalScore !== undefined) ? Number(c.finalScore).toFixed(2) : "0"} (${escapeHtml(c.recommended || "")})`, margin + 8, y + 24);
+        doc.text(`Suitability for Lab: ${c.suitability || ""}`, margin + 8, y + 44);
+
+        if (idx < all.length - 1) doc.addPage();
+      });
+
+      doc.save(`All_Candidates_${(new Date()).toISOString().slice(0,10)}.pdf`);
+    }
+
+
+    // ---------- Recommended modal helpers ----------
+function populateRecommendedDomainSelect() {
+  const select = document.getElementById("recommendedDomainSelect");
+  if (!select) return;
+  // Clear & add default
+  select.innerHTML = '<option value="">-- Select Domain --</option>';
+
+  // Get domains from saved candidates (prefer unique domains that exist)
+  const candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+  const domainSet = new Set();
+  candidateList.forEach(c => {
+    if (c && c.domain) domainSet.add(c.domain);
+  });
+
+  // Preferred order (keep same 8 domains if present)
+  const preferred = [
+    "EMBEDDED","FPGA","RTOS","RF","WIRELESS",
+    "SYSTEM ENGG","COMM AND DSP","CORRELATION AND FUSION"
+  ];
+  preferred.forEach(d => {
+    if (domainSet.has(d)) {
+      const opt = document.createElement("option");
+      opt.value = d; opt.textContent = d;
+      select.appendChild(opt);
+      domainSet.delete(d);
+    }
+  });
+
+  // Add any remaining domains (if any)
+  Array.from(domainSet).sort().forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d; opt.textContent = d;
+    select.appendChild(opt);
+  });
+}
+
+function openRecommendedModal() {
+  populateRecommendedDomainSelect();
+  document.getElementById("recommendedModal").style.display = "flex";
+  // focus the select for keyboard users
+  setTimeout(()=> document.getElementById("recommendedDomainSelect").focus(), 100);
+}
+function closeRecommendedModal() {
+  const m = document.getElementById("recommendedModal");
+  if (m) m.style.display = "none";
+}
+
+// wire buttons
+document.getElementById("openRecommendedModalBtn").addEventListener("click", openRecommendedModal);
+document.getElementById("recommendedModalClose").addEventListener("click", closeRecommendedModal);
+document.getElementById("recommendedModalCancel").addEventListener("click", closeRecommendedModal);
+
+// click outside modal to close
+window.addEventListener("click", function(ev){
+  const modal = document.getElementById("recommendedModal");
+  if (ev.target === modal) closeRecommendedModal();
+});
+
+// download click
+document.getElementById("recommendedModalDownload").addEventListener("click", function () {
+  const domain = document.getElementById("recommendedDomainSelect").value;
+  if (!domain) { alert("Please select a domain first."); return; }
+  closeRecommendedModal();
+  downloadRecommendedPDF(domain);
+});
+
+// Optional: refresh dropdown whenever candidateList changes
+window.addEventListener("storage", (e) => {
+  if (e.key === "candidateList") populateRecommendedDomainSelect();
+});
+
+
+
+
+// ---------- Download Recommended Candidates PDF (Evaluation Layout) ----------
+// ---------- Download Recommended Candidates PDF (Evaluation Layout) ----------
+function downloadRecommendedPDF(domain) {
+  const candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+  if (!candidateList.length) { alert("No candidates available"); return; }
+
+  // Filter recommended candidates for this domain
+  const filtered = candidateList.filter(
+    c => String(c.domain || "") === String(domain) && (c.recommended === "Recommended")
+  );
+  if (!filtered.length) { alert(`No recommended candidates found for ${domain}`); return; }
+
+  // Sort by combined score (test + interview weighted)
+  filtered.sort((a, b) => {
+    const scoreA = (Number(a.weightedTest || 0) + Number(a.avgInterviewWeighted || 0));
+    const scoreB = (Number(b.weightedTest || 0) + Number(b.avgInterviewWeighted || 0));
+    return scoreB - scoreA;
+  });
+
+  if (!window.jspdf || !window.jspdf.jsPDF) { alert("jsPDF not loaded"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"pt", format:"a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 40;
+
+  filtered.forEach((c, idx) => {
+    // ---------- Watermark ----------
+    if (companyLogoBase64) {
+      try {
+        doc.setGState(new doc.GState({ opacity: 0.1 }));
+        const imgType = companyLogoBase64.startsWith("data:image/png") ? "PNG" : "JPEG";
+        doc.addImage(companyLogoBase64, imgType, pageW/2 - 150, 400, 300, 300);
+        doc.setGState(new doc.GState({ opacity: 1 }));
+      } catch (e) { console.warn("Watermark addImage failed", e); }
+    }
+
+    // ---------- Header ----------
+    doc.setFillColor(22, 43, 77);
+    doc.rect(0, 0, pageW, 70, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text("ACAST Avionics Division", pageW / 2, 44, { align: "center" });
+    doc.setFontSize(14);
+    doc.text(`Recommended Candidates - ${domain}`, pageW / 2, 62, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+
+    // ---------- Candidate Info Box ----------
+    let y = 90;
+    const infoW = pageW - margin * 2 - 160 - 12;
+    doc.rect(margin, y, infoW, 160);
+    doc.setFontSize(12);
+    let tY = y + 20;
+    doc.text(`Name: ${c.name || ""}`, margin + 8, tY); tY += 16;
+    if (c.university) { doc.text(`University: ${c.university}`, margin + 8, tY); tY += 16; }
+    if (c.discipline) { doc.text(`Education: ${c.discipline}`, margin + 8, tY); tY += 16; }
+    if (c.cgpa !== undefined && c.cgpa !== null) { doc.text(`CGPA: ${c.cgpa}`, margin + 8, tY); tY += 16; }
+    if (c.experience) { doc.text(`Experience: ${c.experience}`, margin + 8, tY); tY += 16; }
+    if (c.contact) { doc.text(`Contact: ${c.contact}`, margin + 8, tY); tY += 16; }
+    if (c.email) { doc.text(`Email: ${c.email}`, margin + 8, tY); }
+
+    // ---------- Candidate Photo ----------
+    const photoX = margin + infoW + 12;
+    const photoY = y;
+    const photoW = 160;
+    const photoH = 160;
+    doc.rect(photoX, photoY, photoW, photoH);
+    if (c.image) {
+      try {
+        const imgType = c.image.startsWith("data:image/png") ? "PNG" : "JPEG";
+        doc.addImage(c.image, imgType, photoX + 4, photoY + 4, photoW - 8, photoH - 8);
+      } catch (e) {
+        console.warn("Candidate photo addImage failed:", e);
+      }
+    } else {
+      doc.setFontSize(10);
+      doc.text("No Image", photoX + photoW / 2, photoY + photoH / 2, { align: "center" });
+    }
+
+    // ---------- Previous Marks Box ----------
+    y += 180;
+    const boxW = pageW - margin * 2;
+    doc.rect(margin, y, boxW, 40);
+    doc.setFontSize(12);
+    const prevMarks = (Number(c.weightedTest || 0) + Number(c.avgInterviewWeighted || 0)).toFixed(2);
+    doc.text(`Previous Marks: ${prevMarks}`, margin + 10, y + 26);
+
+    // ---------- Interview Scores Box ----------
+    y += 60;
+    doc.rect(margin, y, boxW, 90);
+    doc.setFontSize(12);
+    let eY = y + 24;
+    doc.text(`Intellect (10): __________`, margin + 10, eY); eY += 20;
+    doc.text(`Prof Knowledge (10): __________`, margin + 10, eY); eY += 20;
+    doc.text(`Comm Skills (10): __________`, margin + 10, eY); eY += 20;
+    doc.text(`Total Marks (30): __________`, margin + 10, eY);
+
+    // ---------- Remarks Box ----------
+    y += 110;
+    doc.rect(margin, y, boxW, 60);
+    doc.setFontSize(12);
+    doc.text(`Remarks: ________________________________________________`, margin + 10, y + 30);
+
+    // ---------- Page break ----------
+    if (idx < filtered.length - 1) doc.addPage();
+  });
+
+  doc.save(`Recommended_${domain.replace(/\s+/g,"_")}.pdf`);
+}
+
+
+
+
+    // ---------------- show list (scroll) ----------------
+    function showList(){
+      renderCandidateList();
+      const target = document.getElementById("candidateTableContainer");
+      if(target) target.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    // ---------------- navigation ----------------
+    document.getElementById("backBtn").addEventListener("click", ()=> {
+      window.location.href = "candidate.html";
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", saveCandidate);
+    document.getElementById("showListBtn").addEventListener("click", showList);
+    document.getElementById("deleteBtn").addEventListener("click", deleteSelectedCandidates);
+    document.getElementById("downloadPdfBtn").addEventListener("click", downloadAllPDF);
+
+    // ---------------- initial mount ----------------
+    function init(){
+      renderFixedCriteria();
+      populateCandidateSummary();
+      renderCandidateList();
+
+      // wire up fallback: if currentCandidate missing, show helpful message
+      const cur = getCurrentCandidateFromStorage();
+      if(!cur){
+        setResult("No candidate loaded. Please go to Candidate page and Save & Next before evaluating.", false);
+      } else {
+        setResult("", true);
+      }
+      validateWeights();
+    }
+
+    // listen for storage changes
+    window.addEventListener("storage", (e)=>{
+      if(e.key === "candidateList"){
+        candidateList = JSON.parse(localStorage.getItem("candidateList") || "[]");
+        renderCandidateList();
+      }
+      if(e.key === "currentCandidate"){
+        populateCandidateSummary();
+      }
+    });
+
+    // run init
+    init();
+
+    // expose some functions for debugging / external use
+    window.saveCandidate = saveCandidate;
+    window.renderCandidateList = renderCandidateList;   
+    window.showList = showList;
+    window.downloadAllPDF = downloadAllPDF;
+    window.downloadSelectedDomainExcel = downloadSelectedDomainExcel;
+
+    // Expose key functions to global so other pages can call them:
+          // render list in evaluation page (optional)
+window.downloadSelectedDomainExcel = downloadSelectedDomainExcel; // domain Excel (existing function)
+
+window.downloadRecommendedPDF = downloadRecommendedPDF;       // download recommended PDF by domain
+window.getCandidateList = () => JSON.parse(localStorage.getItem("candidateList") || "[]");
+
+
+
+// --- Expose functions for external pages (viewer) ---
+window.downloadSelectedDomainExcel = typeof downloadSelectedDomainExcel !== "undefined" ? downloadSelectedDomainExcel : function(domain){ alert("downloadSelectedDomainExcel not available"); };
+window.downloadAllPDF = typeof downloadAllPDF !== "undefined" ? downloadAllPDF : function(){ alert("downloadAllPDF not available"); };
+window.downloadRecommendedPDF = typeof downloadRecommendedPDF !== "undefined" ? downloadRecommendedPDF : function(domain){ alert("downloadRecommendedPDF not available"); };
+window.getCandidateList = function(){ return JSON.parse(localStorage.getItem("candidateList") || "[]"); };
+// Optional: expose renderCandidateList if you want viewer to reuse same renderer
+window.renderCandidateList = typeof renderCandidateList !== "undefined" ? renderCandidateList : null;
+
+
+  })();
+  </script>
+
+  <!-- Hidden company logo element used for watermark (if you have this file) -->
+  <img id="companyLogo" src="acast logo.jpeg" style="display:none;" alt="company logo">
+
+</body>
+</html>

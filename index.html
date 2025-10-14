@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ACAST Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; width: 100%; font-family: Arial, sans-serif; }
+
+    #bgVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .login-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.95);
+      padding: 50px 40px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      width: 420px;
+      max-width: calc(100% - 40px);
+      text-align: center;
+    }
+
+    .login-container img.logo {
+      width: 130px;
+      margin-bottom: 14px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      opacity: 0.98;
+    }
+
+    .login-container h2 {
+      margin-bottom: 22px;
+      color: #222;
+    }
+
+    .login-container input {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border: 1px solid #cfcfcf;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    .login-container button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 16px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg,#007BFF,#0056b3);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .login-container button:active { transform: translateY(1px); }
+
+    .error {
+      color: #b00020;
+      margin-top: 12px;
+      font-size: 14px;
+      min-height: 18px;
+    }
+
+    @media (max-width: 480px) {
+      .login-container { padding: 26px 18px; width: 92%; }
+      .login-container img.logo { width: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+  <video autoplay muted loop id="bgVideo">
+    <source src="ACAST_Vid.mp4" type="video/mp4" />
+    Your browser does not support HTML5 video.
+  </video>
+
+  <div class="login-container" role="main" aria-labelledby="loginTitle">
+    <img src="ACAST_Logo.png" alt="ACAST Logo" class="logo">
+    <h2 id="loginTitle">ACAST Personnel Only</h2>
+
+    <form id="loginForm" autocomplete="on">
+      <input id="username" name="username" type="text" placeholder="Username" required autocomplete="username" />
+      <input id="password" name="password" type="password" placeholder="Password" required autocomplete="current-password" />
+      <button type="submit" id="loginBtn">Login</button>
+    </form>
+
+    <div id="errorMessage" class="error" aria-live="polite"></div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
